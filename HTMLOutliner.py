@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys
+import os, sys, re
 import getopt
 from BeautifulSoup import *
 
@@ -16,15 +16,36 @@ class Usage(Exception):
 
 class HTMLOutliner( object ):
     def __init__( self, html ):
-        self.html = html
-        self.soup = BeautifulSoup( html )
+        self.html       = html
+        self.soup       = BeautifulSoup( html )
+        self.outline    = '' 
         self.generate_outline()
 
     def generate_outline( self ):
-        print self.soup.prettify()
+        self.outline = self._outliner( self.soup, 0 )[1:]
 
+    def _outliner( self, node, level ):
+        outline = ''
+        indent  = "\n" + (' ' * level)
+        for i in node.contents:
+            if isinstance( i, Tag ):
+                inner_outline = self._outliner( i, level + 1 )
+                if re.match( r'^\s*$', inner_outline ):
+                    tag = "%(indent)s<%(tag)s></%(tag)s>"
+                else:
+                    tag = "%(indent)s<%(tag)s>%(inner)s%(indent)s</%(tag)s>"
+                    
+                outline += tag % {
+                                    'tag':      i.name,
+                                    'inner':    inner_outline,
+                                    'indent':   indent
+                                 }
+
+        return outline
+                
+            
     def render( self ):
-        return self.soup.prettify()
+        return self.outline
 
 def main(argv=None):
     if argv is None:
