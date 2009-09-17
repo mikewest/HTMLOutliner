@@ -2,26 +2,23 @@
 # encoding: utf-8
 
 import os, sys, re
-import getopt
+from optparse import OptionParser
 from BeautifulSoup import *
 
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-
 class HTMLOutliner( object ):
-    def __init__( self, html ):
+    def __init__( self, html, show_attributes=False, indent=' ' ):
         self.html       = html
         self.soup       = BeautifulSoup( html )
         self.outline    = '' 
-        self.generate_outline()
+        self.indent     = indent
+        self._generate_outline( show_attributes )
 
-    def generate_outline( self, show_attributes=True ):
-        self.outline = self._outliner( self.soup, 0, show_attributes )[1:]
+    def _generate_outline( self, show_attributes ):
+        self.outline = self._outliner( self.soup, 0, show_attributes )
 
     def _outliner( self, node, level, show_attributes ):
         outline = ''
-        indent  = "\n" + (' ' * level)
+        indent  = "\n" + ( self.indent * level )
         for i in node.contents:
             if isinstance( i, Tag ):
                 inner_outline = self._outliner( i, level + 1, show_attributes )
@@ -30,7 +27,6 @@ class HTMLOutliner( object ):
                         tag = "%(indent)s<%(tag)s%(attrs)s>"
                     else:
                         tag = "%(indent)s<%(tag)s%(attrs)s></%(tag)s>"
-
                 else:
                     tag = "%(indent)s<%(tag)s%(attrs)s>%(inner)s%(indent)s</%(tag)s>"
                 
@@ -45,9 +41,7 @@ class HTMLOutliner( object ):
                                     'inner':    inner_outline,
                                     'indent':   indent
                                  }
-
         return outline
-                
             
     def render( self ):
         return self.outline
@@ -55,15 +49,28 @@ class HTMLOutliner( object ):
 def main(argv=None):
     if argv is None:
         argv = sys.argv
+
+    parser=OptionParser(usage="Usage: %prog [options] filename", version="%prog 0.5")
+    parser.add_option(  "-a", "--attributes", 
+                        action="store_true", dest="show_attributes", default=False,
+                        help="Display element attributes in the generated outline" )
+
+    (options, args) = parser.parse_args()
+
+    if len(args) == 0:
+        parser.error("Please provide a filename to outline.")
+    elif len(args) > 1:
+        parser.error("Only one filename is accepted.  Please try again with a single file.")
+
+    filename = args[ 0 ]
+
     try:
-        filename = argv[ 1 ]
         with open( filename, 'r' ) as f:
             data = f.read()
-        print HTMLOutliner( data ).render()
+        print HTMLOutliner( data, options.show_attributes ).render()
         return 0
-    except:
-        raise Usage(msg)
-        return 2
+    except IOError as (errno, strerror):
+        parser.error("Could not open %s\nIOError #%s: %s" % ( filename, errno, strerror ) )
 
 if __name__ == "__main__":
     sys.exit(main())
