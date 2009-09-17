@@ -37,5 +37,32 @@ class BasicTests( HTMLOutlinerTester ):
             """
         )
 
+    def testSelfClosing( self ):
+        self.assertOutline(
+            '<p><img></p>',
+            """
+<p>
+ <img>
+</p>
+            """
+        )
+
+class AttributeTests( HTMLOutlinerTester ):
+    def testSingle( self ):
+        self.assertOutline(
+            """<strong class="classname">This is a string.</strong>""",
+            """<strong class="classname"></strong>"""
+        )
+        self.assertOutline(
+            """<strong class='classname'>This is a string.</strong>""",
+            """<strong class="classname"></strong>"""
+        )
+
+    def testMultiple( self ):
+        self.assertOutline(
+            """<strong id='elID' class='classname'>This is a string.</strong>""",
+            """<strong id="elID" class="classname"></strong>"""
+        )
+
 if __name__ == '__main__':
     unittest.main()
