@@ -4,8 +4,8 @@ import unittest
 from HTMLOutliner import HTMLOutliner
 
 class HTMLOutlinerTester( unittest.TestCase ):
-    def assertOutline( self, input, expected ):
-        result      = HTMLOutliner( input ).render()
+    def assertOutline( self, input, expected, attributes=True, comments=True ):
+        result      = HTMLOutliner( input, show_attributes=attributes, show_comments=comments ).render()
         self.assertEquals( result.strip(), expected.strip() )
 
 class BasicTests( HTMLOutlinerTester ):
@@ -62,6 +62,38 @@ class AttributeTests( HTMLOutlinerTester ):
         self.assertOutline(
             """<strong id='elID' class='classname'>This is a string.</strong>""",
             """<strong id="elID" class="classname"></strong>"""
+        )
+
+class CommentTexts( HTMLOutlinerTester ):
+    def testComment( self ):
+        self.assertOutline(
+            """<!-- This is a comment -->""",
+            """<!-- This is a comment -->"""
+        )
+
+    def testCommentHTMLDoc( self ):
+        self.assertOutline(
+            """
+<!--
+  - This is a block's title
+  -
+  - And this is a potentially long description.
+  - It could describe many things about the block,
+  - such as it's purpose, requirements, and
+  - favourite colours.
+  -->
+            """,
+            """<!-- This is a block's title -->"""
+        )
+
+    def testCommentInElement( self ):
+        self.assertOutline(
+            """<p>This is text. <!-- This is a comment --></p>""",
+            """
+<p>
+ <!-- This is a comment -->
+</p>
+            """
         )
 
 if __name__ == '__main__':
